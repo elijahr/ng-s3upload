@@ -16,6 +16,11 @@ angular.module('ngS3upload.directives', []).
             "bar-success": $scope.attempt && !$scope.uploading && $scope.success
           };
         };
+        $scope.$watch('progress', function(progress){
+          if ($attrs.progressModel) {
+            $scope.$eval($attrs.progressModel + ' = progress');
+          }
+        });
       }],
       compile: function (element, attr, linker) {
         return {
