@@ -34,9 +34,9 @@ angular.module('ngS3upload.config', []).
     this.uploads = 0;
     var self = this;
 
-    this.getUploadOptions = function (uri) {
+    this.getUploadOptions = function (uri, filename, prefix) {
       var deferred = $q.defer();
-      $http.get(uri).
+      $http({ method: 'GET', url:uri, params:{ filename: filename, prefix: prefix }}).
         success(function (response, status) {
           deferred.resolve(response);
         }).error(function (error, status) {
@@ -159,6 +159,11 @@ angular.module('ngS3upload.directives', []).
             "bar-success": $scope.attempt && !$scope.uploading && $scope.success
           };
         };
+        $scope.$watch('progress', function(progress){
+          if ($attrs.progressModel) {
+            $scope.$eval($attrs.progressModel + ' = progress');
+          }
+        });
       }],
       compile: function (element, attr, linker) {
         return {
@@ -176,8 +181,7 @@ angular.module('ngS3upload.directives', []).
               acl: 'public-read',
               uploadingKey: 'uploading',
               folder: '',
-              enableValidation: true,
-              targetFilename: null
+              enableValidation: true
             }, opts);
             var bucket = scope.$eval(attrs.bucket);
 
@@ -196,26 +200,24 @@ angular.module('ngS3upload.directives', []).
             var uploadFile = function () {
               var selectedFile = file[0].files[0];
               var filename = selectedFile.name;
-              var ext = filename.split('.').pop();
 
-              S3Uploader.getUploadOptions(opts.getOptionsUri).then(function (s3Options) {
+              S3Uploader.getUploadOptions(opts.getOptionsUri, filename, opts.prefix).then(function (s3Options) {
                 if (opts.enableValidation) {
                   ngModel.$setValidity('uploading', false);
                 }
 
-                var s3Uri = 'https://' + bucket + '.s3.amazonaws.com/';
-                var key = opts.targetFilename ? scope.$eval(opts.targetFilename) : opts.folder + (new Date()).getTime() + '-' + S3Uploader.randomString(16) + "." + ext;
+                var s3Uri = 'http://s3.amazonaws.com/' + bucket + '/';
                 S3Uploader.upload(scope,
                     s3Uri,
-                    key,
+                    s3Options.key,
                     opts.acl,
                     selectedFile.type,
-                    s3Options.key,
+                    s3Options.access_key,
                     s3Options.policy,
                     s3Options.signature,
                     selectedFile
                   ).then(function () {
-                    ngModel.$setViewValue(s3Uri + key);
+                    ngModel.$setViewValue(s3Uri + s3Options.key);
                     scope.filename = ngModel.$viewValue;
 
                     if (opts.enableValidation) {
