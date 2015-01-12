@@ -1,6 +1,6 @@
 {
   "name": "ngs3upload",
-  "version": "0.1.1",
+  "version": "0.1.2-nox",
   "dependencies": {},
   "devDependencies": {
     "connect-livereload": "~0.2.0",
